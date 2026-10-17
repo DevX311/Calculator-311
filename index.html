@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#151922">
+<title>My Calculator Pro</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100dvh;
+  display: flex; justify-content: center; align-items: center;
+  background: #0d1118; color: white;
+  font-family: Arial, sans-serif;
+}
+.app {
+  width: 100%; max-width: 390px; padding: 20px;
+  background: #151922; min-height: 100dvh;
+  display: flex; flex-direction: column; justify-content: center;
+}
+h2 { margin: 0 0 18px; font-size: 20px; color: #aaa; }
+#display {
+  width: 100%; height: 100px; margin-bottom: 20px;
+  border: 0; border-radius: 14px; padding: 15px;
+  background: #222938; color: white;
+  font-size: 34px; text-align: right;
+}
+.keys {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+button {
+  min-width: 0; height: clamp(58px, 10dvh, 76px);
+  border: 0; border-radius: 16px;
+  background: #303849; color: white;
+  font-size: 23px; font-weight: 600;
+  touch-action: manipulation;
+}
+button:active { opacity: .7; transform: scale(.97); }
+.op { background: #5148c9; }
+.clear { background: #b83d52; }
+.zero { grid-column: span 2; }
+#status { min-height: 22px; color: #aaa; text-align: right; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main class="app">
+  <h2>MY CALCULATOR PRO</h2>
+  <input id="display" value="0" aria-label="Calculator display" readonly>
+  <div class="keys">
+    <button class="clear" onclick="clearAll()">AC</button>
+    <button onclick="backspace()">⌫</button>
+    <button onclick="percent()">%</button>
+    <button class="op" onclick="operator('/')">÷</button>
+
+    <button onclick="digit('7')">7</button>
+    <button onclick="digit('8')">8</button>
+    <button onclick="digit('9')">9</button>
+    <button class="op" onclick="operator('*')">×</button>
+
+    <button onclick="digit('4')">4</button>
+    <button onclick="digit('5')">5</button>
+    <button onclick="digit('6')">6</button>
+    <button class="op" onclick="operator('-')">−</button>
+
+    <button onclick="digit('1')">1</button>
+    <button onclick="digit('2')">2</button>
+    <button onclick="digit('3')">3</button>
+    <button class="op" onclick="operator('+')">+</button>
+
+    <button onclick="toggleSign()">±</button>
+    <button class="zero" onclick="digit('0')">0</button>
+    <button onclick="decimal()">.</button>
+    <button class="op" onclick="calculate()">=</button>
+  </div>
+  <div id="status">Ready</div>
+</main>
+
+<script>
+const display = document.getElementById('display');
+const statusText = document.getElementById('status');
+let current = '0', stored = null, pending = null, fresh = false;
+
+function show() { display.value = current; }
+
+function digit(n) {
+  if (fresh || current === 'Error') {
+    current = n; fresh = false;
+  } else if (current === '0') current = n;
+  else if (current.length < 15) current += n;
+  show();
+}
+
+function decimal() {
+  if (fresh || current === 'Error') {
+    current = '0.'; fresh = false;
+  } else if (!current.includes('.')) current += '.';
+  show();
+}
+
+function operator(op) {
+  if (current === 'Error') return;
+  if (pending && !fresh) calculate();
+  stored = Number(current);
+  pending = op;
+  fresh = true;
+  statusText.textContent = 'Choose next number';
+}
+
+function calculate() {
+  if (pending === null || stored === null || current === 'Error') return;
+  const a = stored, b = Number(current);
+  let result;
+  if (pending === '+') result = a + b;
+  if (pending === '-') result = a - b;
+  if (pending === '*') result = a * b;
+  if (pending === '/') result = b === 0 ? NaN : a / b;
+
+  current = Number.isFinite(result)
+    ? String(Number(result.toPrecision(10)))
+    : 'Error';
+
+  stored = null;
+  pending = null;
+  fresh = true;
+  statusText.textContent = current === 'Error'
+    ? 'Cannot divide by zero' : 'Result';
+  show();
+}
+
+function clearAll() {
+  current = '0'; stored = null; pending = null; fresh = false;
+  statusText.textContent = 'Ready';
+  show();
+}
+
+function backspace() {
+  if (fresh || current === 'Error') { current = '0'; fresh = false; }
+  else current = current.length > 1 ? current.slice(0, -1) : '0';
+  show();
+}
+
+function percent() {
+  if (current !== 'Error') {
+    current = String(Number(current) / 100);
+    show();
+  }
+}
+
+function toggleSign() {
+  if (current !== 'Error') {
+    current = String(-Number(current));
+    show();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (/^[0-9]$/.test(e.key)) digit(e.key);
+  else if (e.key === '.') decimal();
+  else if (['+', '-', '*', '/'].includes(e.key)) operator(e.key);
+  else if (e.key === 'Enter' || e.key === '=') calculate();
+  else if (e.key === 'Backspace') backspace();
+  else if (e.key === 'Escape') clearAll();
+});
+</script>
+</body>
+</html>
